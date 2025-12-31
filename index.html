@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letter-Symbol Converter</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --accent-color: #007bff;
+            --border-color: #ddd;
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body.dark-mode { --bg-color: #121212; --text-color: #fff; --accent-color: #0d6efd; --border-color: #333; --error-color: #ff6b6b; --success-color: #51cf66; }
+        body { font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); margin:0; padding:0; display:flex; flex-direction:column; min-height:100vh; transition: background-color 0.3s, color 0.3s; }
+        header { background-color: var(--accent-color); color:white; padding:1rem; text-align:center; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+        main { flex:1; padding:2rem; max-width:1200px; margin:0 auto; width:100%; display:grid; grid-template-columns:1fr; gap:2rem; }
+        @media (min-width:768px){ main { grid-template-columns:1fr 1fr; } }
+        section { background-color: var(--bg-color); border:1px solid var(--border-color); border-radius:8px; padding:1.5rem; box-shadow:0 4px 6px rgba(0,0,0,0.05); }
+        h2 { margin-top:0; border-bottom:2px solid var(--accent-color); padding-bottom:0.5rem; }
+        textarea { width:100%; min-height:150px; padding:1rem; border:1px solid var(--border-color); border-radius:4px; font-size:1rem; resize:vertical; background-color:var(--bg-color); color:var(--text-color); }
+        select,input[type="checkbox"],button { padding:0.75rem; border:1px solid var(--border-color); border-radius:4px; font-size:1rem; cursor:pointer; }
+        button { background-color:var(--accent-color); color:white; border:none; transition: background-color 0.3s; }
+        button:hover { filter: brightness(0.9); }
+        .controls { display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:1rem; }
+        .status { margin-top:1rem; padding:1rem; border-radius:4px; display:none; }
+        .status.error { background-color:var(--error-color); color:white; }
+        .status.success { background-color:var(--success-color); color:white; }
+        table { width:100%; border-collapse:collapse; margin-top:1rem; }
+        th,td { border:1px solid var(--border-color); padding:0.75rem; text-align:center; }
+        th { background-color:var(--accent-color); color:white; }
+        footer { background-color:var(--accent-color); color:white; text-align:center; padding:1rem; margin-top:auto; }
+        .toggle-container { position:absolute; top:1rem; right:1rem; }
+        .toggle { display:none; }
+        .toggle+label { background-color:#ccc; border-radius:50px; display:inline-block; height:34px; position:relative; width:60px; cursor:pointer; }
+        .toggle+label::before { background-color:white; border-radius:50%; content:''; height:26px; left:4px; position:absolute; top:4px; transition:0.3s; width:26px; }
+        .toggle:checked+label { background-color:var(--accent-color); }
+        .toggle:checked+label::before { transform:translateX(26px); }
+        #help-content { display:none; }
+        #help-content.show { display:block; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Letter-Symbol Converter</h1>
+    <div class="toggle-container">
+        <input type="checkbox" id="dark-mode-toggle" class="toggle">
+        <label for="dark-mode-toggle"></label>
+    </div>
+</header>
+<main>
+<section id="converter">
+    <h2>Converter</h2>
+    <textarea id="input" placeholder="Enter text to convert..."></textarea>
+    <div class="controls">
+        <select id="mode">
+            <option value="encode">Letters to Symbols (Encode)</option>
+            <option value="decode">Symbols to Letters (Decode)</option>
+        </select>
+        <label><input type="checkbox" id="ignore-unknown" checked> Ignore unknown characters</label>
+        <button id="convert-btn">Convert (Ctrl+Enter)</button>
+        <button id="clear-btn">Clear</button>
+    </div>
+    <textarea id="output" placeholder="Converted output will appear here..." readonly></textarea>
+    <div class="controls">
+        <button id="copy-input">Copy Input</button>
+        <button id="copy-output">Copy Output</button>
+        <div id="char-count">Input: 0 chars | Output: 0 chars</div>
+    </div>
+    <div id="status" class="status"></div>
+</section>
+<!-- Mapping table & help content omitted for brevity; paste if needed -->
+</main>
+<footer>
+    <p>&copy; 2025 Letter-Symbol Converter. Built with care.</p>
+</footer>
+<script>
+const mapping={A:'⨀',B:'𐑂',C:'Ͻ',D:'⌖',E:'Ξ',F:'Ƒ',G:'Ϟ',H:'⌬',I:'ɨ',J:'⟆',K:'Ӄ',L:'↯',M:'𖤐',N:'И',O:'⊖',P:'℘',Q:'ʠ',R:'⟴',S:'§',T:'⟒',U:'⩎',V:'ᴧ',W:'〰',X:'𐊴',Y:'Ϥ',Z:'ʑ'};
+const reverseMapping=Object.fromEntries(Object.entries(mapping).map(([k,v])=>[v,k]));
+const elements={input:document.getElementById('input'),output:document.getElementById('output'),mode:document.getElementById('mode'),ignoreUnknown:document.getElementById('ignore-unknown'),convertBtn:document.getElementById('convert-btn'),clearBtn:document.getElementById('clear-btn'),copyInput:document.getElementById('copy-input'),copyOutput:document.getElementById('copy-output'),charCount:document.getElementById('char-count'),status:document.getElementById('status'),darkModeToggle:document.getElementById('dark-mode-toggle')};
+function showStatus(message,type='error'){elements.status.textContent=message;elements.status.classList.remove('error','success');elements.status.classList.add(type);elements.status.style.display='block';setTimeout(()=>{elements.status.style.display='none';},5000);}
+function updateCharCount(){elements.charCount.textContent=`Input: ${elements.input.value.length} chars | Output: ${elements.output.value.length} chars`;}
+function convertText(){let text=elements.input.value.toUpperCase();const isEncode=elements.mode.value==='encode';const ignore=elements.ignoreUnknown.checked;let result='';let hasError=false;for(let char of text){if(isEncode){if(mapping[char]){result+=mapping[char];}else if(ignore||!/[A-Z]/.test(char)){result+=char;}else{hasError=true;break;}}else{if(reverseMapping[char]){result+=reverseMapping[char];}else if(ignore){result+=char;}else{hasError=true;break;}}}if(hasError){showStatus('Error: Unknown characters found. Uncheck "Ignore unknown" to pass through.','error');return;}elements.output.value=result;updateCharCount();showStatus('Conversion successful!','success');}
+function clearAll(){elements.input.value='';elements.output.value='';updateCharCount();showStatus('Cleared.','success');}
+function copyToClipboard(text,button){navigator.clipboard.writeText(text).then(()=>{button.textContent='Copied!';setTimeout(()=>{button.textContent=button.id==='copy-input'?'Copy Input':'Copy Output';},2000);}).catch(()=>{showStatus('Failed to copy.','error');});}
+elements.convertBtn.addEventListener('click',convertText);elements.clearBtn.addEventListener('click',clearAll);elements.copyInput.addEventListener('click',()=>copyToClipboard(elements.input.value,elements.copyInput));elements.copyOutput.addEventListener('click',()=>copyToClipboard(elements.output.value,elements.copyOutput));elements.input.addEventListener('input',updateCharCount);elements.output.addEventListener('input',updateCharCount);
+document.addEventListener('keydown',(e)=>{if(e.ctrlKey&&e.key==='Enter'){convertText();}else if(e.ctrlKey&&e.shiftKey&&e.key.toUpperCase()==='C'){copyToClipboard(elements.output.value,elements.copyOutput);}});
+elements.darkModeToggle.addEventListener('change',(e)=>{document.body.classList.toggle('dark-mode',e.target.checked);});
+updateCharCount();
+</script>
+</body>
+</html>
